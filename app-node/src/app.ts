@@ -1,8 +1,28 @@
 import express from "express";
+import { sequelize } from "./db.js";
+import { setUserRoutes } from "./api/router/user.router.js";
+import { setOrderRoutes } from "./api/router/order.router.js";
+import { initDb } from "./initDb.js";
 
 const app = express();
 
 app.use(express.json());
+
+const router = express.Router();
+
+initDb();
+setUserRoutes(router);
+setOrderRoutes(router);
+
+
+app.get("/health/db", async (_req, res) => {
+  const queryRes = await sequelize.query("SELECT 1 + 1 AS solution");
+
+  console.log("/health/db endpoint")
+  return res.json({
+    res: queryRes
+  })
+});
 
 app.get("/", (_req, res) => {
   console.log("/ endpoint")
@@ -11,14 +31,7 @@ app.get("/", (_req, res) => {
   });
 });
 
-app.get("/users", async (_req, res) => {
-  const apiRes = await fetch("http:app-python:8000/users");
-  const apiData = await apiRes.json();
-  console.log("/users endpoint")
-  return res.json({
-    res: apiData,
-  })
-});
+app.use("/api", router);
 
 app.post("/orders", (req, res) => {
   const body = req.body;
